@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 002192ac53fd9144a92c5dd7b22819a7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 214264
+  packageName: Minimalist Scalable Grid Prototype Materials
+  packageVersion: 1.2
+  assetPath: Assets/Scalable Grid Prototype Materials/Materials/Ground/Gray_Ground_Prototype.mat
+  uploadId: 640529
