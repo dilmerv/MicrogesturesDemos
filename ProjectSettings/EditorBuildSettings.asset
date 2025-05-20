@@ -5,9 +5,18 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/MicrogesturesSimple.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 0
+    path: Assets/Scenes/MicrogesturesLocomotion.unity
+    guid: cac3eb4f0a8a2344e8882e50c2519be1
+  - enabled: 1
+    path: Assets/Scenes/MicrogesturesUIAnd3D.unity
+    guid: 65a77b92fa645234a85f74cdc4acdc28
+  - enabled: 0
+    path: Assets/Scenes/MicrogesturesUIGallery.unity
+    guid: e6f85b1d283c8a741a75181b7ad04081
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 2f024bc50596245438212289d2cbda26, type: 2}
