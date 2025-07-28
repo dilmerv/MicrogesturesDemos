@@ -11,10 +11,10 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/MicrogesturesLocomotion.unity
     guid: cac3eb4f0a8a2344e8882e50c2519be1
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/MicrogesturesUIAnd3D.unity
     guid: 65a77b92fa645234a85f74cdc4acdc28
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/MicrogesturesUIGallery.unity
     guid: e6f85b1d283c8a741a75181b7ad04081
   m_configObjects:
