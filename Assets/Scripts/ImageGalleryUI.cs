@@ -45,21 +45,19 @@ public class ImageGalleryUI : MonoBehaviour
     {
         if (microgestureType == OVRHand.MicrogestureType.SwipeLeft)
         {
-            currentIndex = (currentIndex - 1 + imageList.Count) % imageList.Count;
-            UpdateGallery();
+            NavigateToPreviousImage();
         }
         if (microgestureType == OVRHand.MicrogestureType.SwipeRight)
         {
-            currentIndex = (currentIndex + 1) % imageList.Count;
-            UpdateGallery();
+            NavigateToNextImage();
         }
         if (microgestureType == OVRHand.MicrogestureType.SwipeForward)
         {
-            transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + 0.5f);
+            MoveGalleryForward();
         }
         if (microgestureType == OVRHand.MicrogestureType.SwipeBackward)
         {
-            transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z - 0.5f);
+            MoveGalleryBackward();
         }
         if (microgestureType == OVRHand.MicrogestureType.ThumbTap)
         {
@@ -87,5 +85,27 @@ public class ImageGalleryUI : MonoBehaviour
         
         //galleryInfo.gameObject.SetActive(!isCenterEnlarged);
         centerImage.rectTransform.localScale = isCenterEnlarged ? originalCenterScale * enlargeScale : originalCenterScale;
+    }
+
+    private void NavigateToPreviousImage()
+    {
+        currentIndex = (currentIndex - 1 + imageList.Count) % imageList.Count;
+        UpdateGallery();
+    }
+
+    private void NavigateToNextImage()
+    {
+        currentIndex = (currentIndex + 1) % imageList.Count;
+        UpdateGallery();
+    }
+
+    private void MoveGalleryForward()
+    {
+        transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + 0.5f);
+    }
+
+    private void MoveGalleryBackward()
+    {
+        transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z - 0.5f);
     }
 }
