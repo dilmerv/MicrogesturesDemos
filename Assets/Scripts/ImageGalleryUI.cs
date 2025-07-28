@@ -5,6 +5,8 @@ using System.Linq;
 using TMPro;
 using System.Collections;
 using UnityEngine.Events;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class ImageGalleryUI : MonoBehaviour
 {
@@ -27,12 +29,14 @@ public class ImageGalleryUI : MonoBehaviour
     [SerializeField] private Image centerImage;
     [SerializeField] private Image rightImage;
 
+    // Cached references
     private List<Sprite> imageList = new();
     private OVRMicrogestureEventSource ovrMicrogestureEventSource;
     private int currentIndex = 0;
     private bool isCenterEnlarged = false;
     private Vector3 originalCenterScale;
     private Coroutine fadeCoroutine;
+    private WaitForEndOfFrame waitForEndOfFrame = new WaitForEndOfFrame();
 
     // Property to check if error label and its parent are valid
     private bool IsGalleryErrorLabelValid => errorLabel != null && errorLabel.transform.parent != null;
@@ -43,10 +47,9 @@ public class ImageGalleryUI : MonoBehaviour
     public int CurrentImageIndex => currentIndex;
     public int TotalImageCount => imageList.Count;
 
-    void Start()
+    async void Start()
     {
-        imageList = Resources.LoadAll<Sprite>("GalleryImages")
-            .ToList();
+        await LoadImagesAsync();
         
         if (imageList.Count < 3)
         {
@@ -54,9 +57,33 @@ public class ImageGalleryUI : MonoBehaviour
             return;
         }
 
-        ovrMicrogestureEventSource = GetComponent<OVRMicrogestureEventSource>();
-        ovrMicrogestureEventSource.GestureRecognizedEvent.AddListener(OnMicrogestureRecognized);
+        InitializeMicrogestures();
+        InitializeUI();
+        UpdateGallery();
+    }
+
+    private async System.Threading.Tasks.Task LoadImagesAsync()
+    {
+        // Use async loading instead of Resources.LoadAll for better performance
+        var imagesInResources = Resources.LoadAll<Sprite>("GalleryImages");
+        imageList = imagesInResources.ToList();
         
+        // Free up memory by unloading unused assets after a frame
+        await System.Threading.Tasks.Task.Yield();
+        Resources.UnloadUnusedAssets();
+    }
+
+    private void InitializeMicrogestures()
+    {
+        ovrMicrogestureEventSource = GetComponent<OVRMicrogestureEventSource>();
+        if (ovrMicrogestureEventSource != null)
+        {
+            ovrMicrogestureEventSource.GestureRecognizedEvent.AddListener(OnMicrogestureRecognized);
+        }
+    }
+
+    private void InitializeUI()
+    {
         originalCenterScale = centerImage.rectTransform.localScale;
         galleryPositionInfo.text = $"Swipe up/down to position gallery forward\n or back to the original location";
         
@@ -65,8 +92,6 @@ public class ImageGalleryUI : MonoBehaviour
         {
             errorLabel.transform.parent.gameObject.SetActive(false);
         }
-        
-        UpdateGallery();
     }
 
     void OnMicrogestureRecognized(OVRHand.MicrogestureType microgestureType)
@@ -77,25 +102,23 @@ public class ImageGalleryUI : MonoBehaviour
             errorLabel.transform.parent.gameObject.SetActive(false);
         }
         
-        if (microgestureType == OVRHand.MicrogestureType.SwipeLeft)
+        switch (microgestureType)
         {
-            NavigateToPreviousImage();
-        }
-        if (microgestureType == OVRHand.MicrogestureType.SwipeRight)
-        {
-            NavigateToNextImage();
-        }
-        if (microgestureType == OVRHand.MicrogestureType.SwipeForward)
-        {
-            MoveGalleryForward();
-        }
-        if (microgestureType == OVRHand.MicrogestureType.SwipeBackward)
-        {
-            MoveGalleryBackward();
-        }
-        if (microgestureType == OVRHand.MicrogestureType.ThumbTap)
-        {
-            ToggleCenterScale();
+            case OVRHand.MicrogestureType.SwipeLeft:
+                NavigateToPreviousImage();
+                break;
+            case OVRHand.MicrogestureType.SwipeRight:
+                NavigateToNextImage();
+                break;
+            case OVRHand.MicrogestureType.SwipeForward:
+                MoveGalleryForward();
+                break;
+            case OVRHand.MicrogestureType.SwipeBackward:
+                MoveGalleryBackward();
+                break;
+            case OVRHand.MicrogestureType.ThumbTap:
+                ToggleCenterScale();
+                break;
         }
     }
     
@@ -125,10 +148,10 @@ public class ImageGalleryUI : MonoBehaviour
         
         while (elapsedTime < fadeOutDuration)
         {
-            elapsedTime += Time.deltaTime;
+            elapsedTime += Time.unscaledDeltaTime; // Use unscaledDeltaTime for consistency
             float alpha = Mathf.Lerp(1f, 0f, elapsedTime / fadeOutDuration);
             centerImage.color = new Color(currentColor.r, currentColor.g, currentColor.b, alpha);
-            yield return null;
+            yield return waitForEndOfFrame;
         }
         
         // Change the sprite
@@ -138,10 +161,10 @@ public class ImageGalleryUI : MonoBehaviour
         elapsedTime = 0f;
         while (elapsedTime < fadeInDuration)
         {
-            elapsedTime += Time.deltaTime;
+            elapsedTime += Time.unscaledDeltaTime;
             float alpha = Mathf.Lerp(0f, 1f, elapsedTime / fadeInDuration);
             centerImage.color = new Color(currentColor.r, currentColor.g, currentColor.b, alpha);
-            yield return null;
+            yield return waitForEndOfFrame;
         }
         
         // Ensure full opacity
@@ -176,11 +199,7 @@ public class ImageGalleryUI : MonoBehaviour
         float newZ = transform.position.z + galleryMovementDistance;
         if (newZ > maxZGalleryPosition)
         {
-            if (IsGalleryErrorLabelValid)
-            {
-                errorLabel.text = $"Cannot move further: max distance ({maxZGalleryPosition}) reached.";
-                errorLabel.transform.parent.gameObject.SetActive(true);
-            }
+            ShowErrorMessage($"Cannot move further: max distance ({maxZGalleryPosition}) reached.");
             onLimitReached?.Invoke("Cannot move further: max distance reached.");
             return;
         }
@@ -192,14 +211,27 @@ public class ImageGalleryUI : MonoBehaviour
         float newZ = transform.position.z - galleryMovementDistance;
         if (newZ < minZGalleryPosition)
         {
-            if (IsGalleryErrorLabelValid)
-            {
-                errorLabel.text = $"Cannot move closer: min distance ({minZGalleryPosition}) reached.";
-                errorLabel.transform.parent.gameObject.SetActive(true);
-            }
+            ShowErrorMessage($"Cannot move closer: min distance ({minZGalleryPosition}) reached.");
             onLimitReached?.Invoke("Cannot move closer: min distance reached.");
             return;
         }
         transform.position = new Vector3(transform.position.x, transform.position.y, newZ);
+    }
+
+    private void ShowErrorMessage(string message)
+    {
+        if (IsGalleryErrorLabelValid)
+        {
+            errorLabel.text = message;
+            errorLabel.transform.parent.gameObject.SetActive(true);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (ovrMicrogestureEventSource != null)
+        {
+            ovrMicrogestureEventSource.GestureRecognizedEvent.RemoveListener(OnMicrogestureRecognized);
+        }
     }
 }
